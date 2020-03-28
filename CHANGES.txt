@@ -1,0 +1,7 @@
+Changelog
+=========
+
+1.0.0.dev
+---------
+
+- Init Release with basic functionality [mathias]

@@ -8,12 +8,12 @@ tests_require = [
 ]
 
 setup(
-    name='local_proxy',
+    name='offline_proxy',
     version='1.0.0.dev',
     author='primetech',
     author_email='mathias@primtech.dev',
-    packages=['local_proxy', ],
-    url='http://pypi.python.org/pypi/local_proxy/',
+    packages=['offline_proxy', ],
+    url='https://github.com/primetech/offline_proxy',
     license='GPL',
     description='Cache endpoint localy (filestorage)',
     long_description=open('README.txt').read(),

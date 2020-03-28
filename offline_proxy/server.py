@@ -1,5 +1,5 @@
 from aiohttp.client_exceptions import ClientConnectorError
-from local_proxy.cache import ProxyCache
+from offline_proxy.cache import ProxyCache
 from urllib.parse import urljoin
 import aiohttp.web
 import argparse

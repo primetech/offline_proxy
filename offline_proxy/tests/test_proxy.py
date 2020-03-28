@@ -1,6 +1,6 @@
 from aioresponses import aioresponses
-from local_proxy.cache import ProxyCache
-from local_proxy.server import app
+from offline_proxy.cache import ProxyCache
+from offline_proxy.server import app
 import aiohttp
 import pytest
 import tempfile
