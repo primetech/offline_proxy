@@ -1,18 +1,24 @@
 from aioresponses import aioresponses
+from local_proxy.cache import ProxyCache
 from local_proxy.server import app
 import aiohttp
 import pytest
+import tempfile
+import shutil
 
 
 TEST_BACKEND = 'http://test.com'
 
 
-@pytest.fixture
-async def app_server(loop, aiohttp_server):
-    proxy_app = await app(backend=TEST_BACKEND)
+@pytest.fixture()
+async def app_server(loop, aiohttp_server, tmpdir_factory):
+    cache_dir = tmpdir_factory.mktemp('cache')
+    proxy_app = await app(backend=TEST_BACKEND, location=cache_dir)
     server = await aiohttp_server(proxy_app)
     server.url = f'http://localhost:{server.port}'
-    return server
+    server.cache_dir = cache_dir
+    yield server
+    shutil.rmtree(cache_dir)
 
 
 async def client(endpoint):
@@ -50,7 +56,42 @@ class TestProxy:
 
             response, body = await client(app_server.url + '/error')
 
-            assert response.status == 200
-            assert body == b'Fallback'
+            assert 404 == response.status
 
 
+    async def test_requests_are_getting_cached(self, app_server):
+
+        with aioresponses(passthrough=[app_server.url]) as mock:
+            mock.get(TEST_BACKEND + '/site', status='200', body='OK')
+
+            response, body = await client(app_server.url + '/site')
+
+            cache = ProxyCache(app_server.cache_dir)
+            assert 2 == len(cache.cache)
+            assert body == cache.get_cached_content_by_url(TEST_BACKEND + '/site')
+
+
+    async def test_request_returns_cached_content_on_server_error(self, app_server):
+
+        with aioresponses(passthrough=[app_server.url]) as mock:
+            mock.get(TEST_BACKEND + '/site', status='200', body='Cached')
+            response, body = await client(app_server.url + '/site')
+
+        with aioresponses(passthrough=[app_server.url]) as mock:
+            mock.get(TEST_BACKEND + '/site', status='500')
+            response, body = await client(app_server.url + '/site')
+
+            assert b'Cached' == body
+
+    async def test_request_returns_not_found_if_not_in_cache(self, app_server):
+
+        with aioresponses(passthrough=[app_server.url]) as mock:
+            mock.get(TEST_BACKEND + '/site', status='200', body='Cached')
+            response, body = await client(app_server.url + '/site')
+
+
+        with aioresponses(passthrough=[app_server.url]) as mock:
+            mock.get(TEST_BACKEND + '/anothersite', status='500')
+            response, body = await client(app_server.url + '/anothersite')
+
+            assert 404 == response.status

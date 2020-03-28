@@ -20,6 +20,7 @@ setup(
     install_requires=[
         'aiohttp',
         'gunicorn',
+        'diskcache',
     ],
     tests_require=tests_require,
     setup_requires=['pytest-runner', ],
