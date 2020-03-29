@@ -1,4 +1,5 @@
 from aiohttp.client_exceptions import ClientConnectorError
+from aiohttp.client_exceptions import ServerTimeoutError
 from offline_proxy.cache import ProxyCache
 from urllib.parse import urljoin
 import aiohttp.web
@@ -36,7 +37,8 @@ class LocalProxy:
         logger.info(f'Distpach to: {target}')
 
         try:
-            async with aiohttp.request('GET', target) as response:
+            timeout = aiohttp.ClientTimeout(total=60)
+            async with aiohttp.request('GET', target, timeout=timeout) as response:
                 body = await response.content.read()
 
             if str(response.status).startswith('5'):
@@ -55,7 +57,7 @@ class LocalProxy:
                 headers=headers
             )
 
-        except (socket.gaierror, ClientConnectorError, ServerError):
+        except (socket.gaierror, ClientConnectorError, ServerTimeoutError, ServerError):
 
             if target in self.cache:
                 return aiohttp.web.Response(
