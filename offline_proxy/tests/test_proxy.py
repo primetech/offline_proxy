@@ -3,7 +3,6 @@ from offline_proxy.cache import ProxyCache
 from offline_proxy.server import app
 import aiohttp
 import pytest
-import tempfile
 import shutil
 
 
@@ -58,7 +57,6 @@ class TestProxy:
 
             assert 404 == response.status
 
-
     async def test_requests_are_getting_cached(self, app_server):
 
         with aioresponses(passthrough=[app_server.url]) as mock:
@@ -69,7 +67,6 @@ class TestProxy:
             cache = ProxyCache(app_server.cache_dir)
             assert 2 == len(cache.cache)
             assert body == cache.get_cached_content_by_url(TEST_BACKEND + '/site')
-
 
     async def test_request_returns_cached_content_on_server_error(self, app_server):
 
@@ -88,7 +85,6 @@ class TestProxy:
         with aioresponses(passthrough=[app_server.url]) as mock:
             mock.get(TEST_BACKEND + '/site', status='200', body='Cached')
             response, body = await client(app_server.url + '/site')
-
 
         with aioresponses(passthrough=[app_server.url]) as mock:
             mock.get(TEST_BACKEND + '/anothersite', status='500')

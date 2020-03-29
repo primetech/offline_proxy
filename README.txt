@@ -12,8 +12,8 @@ Limitations
 -----------
 
 - Only GET requests are handled.
-- Stores only the url, content_type and body. All other header infos get lost
-- No performance improvement at all - in fact it adds a lot of overhead
+- Conent-Encoding header not supported.
+- No performance improvement at all - in fact it adds a lot of overhead.
 
 
 Development

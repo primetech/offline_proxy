@@ -35,7 +35,6 @@ class LocalProxy:
         target = urljoin(self.backend, request.raw_path)
         logger.info(f'Distpach to: {target}')
 
-
         try:
             async with aiohttp.request('GET', target) as response:
                 body = await response.content.read()
@@ -43,12 +42,17 @@ class LocalProxy:
             if str(response.status).startswith('5'):
                 raise ServerError()
 
-            content_type = response.content_type
-            self.cache.add_respone_to_cache(target, content_type, body)
+            headers = dict(response.headers)
+
+            # Prepare headers for response
+            headers.pop('Content-Encoding', None)
+            headers['Content-Length'] = str(len(body))
+
+            self.cache.add_respone_to_cache(target, headers, body)
             return aiohttp.web.Response(
                 body=body,
                 status=response.status,
-                content_type=response.content_type
+                headers=headers
             )
 
         except (socket.gaierror, ClientConnectorError, ServerError):
@@ -57,14 +61,13 @@ class LocalProxy:
                 return aiohttp.web.Response(
                     body=self.cache.get_cached_content_by_url(target),
                     status=200,
-                    content_type=self.cache.get_cached_content_type_by_url(target)
+                    headers=self.cache.get_cached_header_by_url(target)
                 )
             else:
                 return aiohttp.web.Response(
                     status=404,
                     content_type='text/plain'
                 )
-
 
 
 async def app(backend=None, location=None):
@@ -81,7 +84,6 @@ async def app(backend=None, location=None):
         raise Exception('PROXY_CACHE_LOCATION env var is required')
     elif location is None and env_location:
         location = env_location
-
 
     proxy = LocalProxy(backend, location)
     proxy_app = aiohttp.web.Application()

@@ -1,5 +1,6 @@
 from diskcache import Cache
 import hashlib
+import pickle
 
 
 class ProxyCache:
@@ -17,19 +18,19 @@ class ProxyCache:
     def get_key(url):
         return hashlib.md5(url.encode()).hexdigest()
 
-    def add_respone_to_cache(self, url, content_type, body):
+    def add_respone_to_cache(self, url, headers, body):
         """
         Adds a new item to the cache using the url.
         """
-
-        self.cache[self.get_key(url)] = body
-        self.cache[self.get_key(url) + '__type'] = content_type
+        key = self.get_key(url)
+        self.cache[key] = body
+        self.cache[key + '__header'] = pickle.dumps(headers)
 
     def get_cached_content_by_url(self, url):
-        return self.cache[self.get_key(url)]            
+        return self.cache[self.get_key(url)]
 
-    def get_cached_content_type_by_url(self, url):
-        return self.cache[self.get_key(url) + '__type']            
+    def get_cached_header_by_url(self, url):
+        return pickle.loads(self.cache[self.get_key(url) + '__header'])
 
     def __contains__(self, url):
         return self.get_key(url) in self.cache
